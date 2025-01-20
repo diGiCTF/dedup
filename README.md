@@ -1,16 +1,15 @@
-# dedup
+# Deduplicate Wordlist Script
 
-The dedup script is a command-line tool for managing wordlists by removing duplicate entries efficiently. It compares a new wordlist against a specified master wordlist, filtering out any lines already present in the master. Unique lines from the new wordlist are saved to a standardized filtered output file, and then appended to the master wordlist to keep it up-to-date. The script provides a summary after each run, showing how many lines were duplicates and how many were new. With the --master <name> option, you can manage multiple master wordlists by using different keywords, keeping files organized and deduplicated with ease.
+This script helps manage and deduplicate wordlists by comparing a new wordlist with an existing master wordlist. Unique entries from the new wordlist are appended to the master wordlist, and a filtered wordlist of new unique lines is created.
 
+## Features
+- Checks if a master wordlist exists and creates one if it doesn't.
+- Filters out duplicates from the new wordlist.
+- Saves unique lines to a filtered wordlist and appends them to the master wordlist.
+- Provides detailed output about the deduplication process.
 
-Usage:
-dedup wordlist.txt --master <name>
+## Usage
 
-```
-mv deduplicate_wordlist.sh dedup
-chmod +x dedup
-
-sudo mv dedup /usr/local/bin/
-
-
+```bash
+./deduplicate_wordlist.sh new_wordlist.txt --master <reference_name>
 ```
