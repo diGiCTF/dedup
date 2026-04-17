@@ -32,15 +32,38 @@ Uninstall with `./install.sh --uninstall` (add `--system` or `--prefix` if that'
 
 ```
 dedup [-m <reference_name>] [-d <dir>] [-q] <new_wordlist | ->
+dedup -l [<reference_name>] [-d <dir>]
 ```
 
 | Flag | Description |
 |------|-------------|
 | `-m`, `--master <name>` | Reference namespace. Each engagement gets its own master file. Default: `default`. |
 | `-d`, `--dir <path>` | Directory for master/filtered files. Falls back to `$DEDUP_DIR`, then the current directory. |
+| `-l`, `--locate [name]` | With a name: print the master's path to stdout (scriptable). Without a name: list all namespaces in `<dir>` with line counts. Exits non-zero if the named master does not exist. |
 | `-q`, `--quiet` | Suppress the summary output. |
 | `-h`, `--help` | Show help. |
 | `-` | Read the new wordlist from stdin. |
+
+### Locating masters
+
+```bash
+# Print the path of a specific master (stdout is just the path — scriptable)
+dedup -l ncl2026
+# → /home/user/.dedup/dedup_ncl2026_master.txt
+
+# Use it in a pipeline
+wc -l "$(dedup -l ncl2026)"
+grep -i admin "$(dedup -l ncl2026)"
+
+# Guard clause: "have I started this namespace?"
+if dedup -l ncl2026 >/dev/null 2>&1; then echo "exists"; fi
+
+# List every namespace in the directory
+dedup -l
+# NAMESPACE                      LINES  PATH
+# ncl2026                        14203  /home/user/.dedup/dedup_ncl2026_master.txt
+# client_acme                     8821  /home/user/.dedup/dedup_client_acme_master.txt
+```
 
 ### Files produced
 

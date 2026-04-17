@@ -5,12 +5,16 @@ PROG="$(basename "$0")"
 usage() {
     cat <<EOF
 Usage: $PROG [-m <reference_name>] [-d <dir>] [-q] <new_wordlist | ->
+       $PROG -l [<reference_name>] [-d <dir>]
 
 Maintain a per-reference master wordlist and emit only words not previously seen.
 
   -m, --master <name>   Reference namespace (default: "default")
   -d, --dir <path>      Directory for master/filtered files
                         (default: \$DEDUP_DIR, else current directory)
+  -l, --locate [name]   Print master path for <name>, or list all namespaces
+                        in <dir> when no name given. Exits non-zero if the
+                        named master does not exist.
   -q, --quiet           Suppress summary output
   -h, --help            Show this help
 
@@ -25,11 +29,17 @@ REF="default"
 DIR="${DEDUP_DIR:-.}"
 QUIET=0
 INPUT=""
+LOCATE=0
+LOCATE_NAME=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -m|--master) REF="${2:?missing value for $1}"; shift 2 ;;
         -d|--dir)    DIR="${2:?missing value for $1}"; shift 2 ;;
+        -l|--locate)
+            LOCATE=1; shift
+            if [[ $# -gt 0 && "$1" != -* ]]; then LOCATE_NAME="$1"; shift; fi
+            ;;
         -q|--quiet)  QUIET=1; shift ;;
         -h|--help)   usage; exit 0 ;;
         --) shift; INPUT="${1:-}"; break ;;
@@ -40,6 +50,41 @@ while [[ $# -gt 0 ]]; do
             fi ;;
     esac
 done
+
+if [[ "$LOCATE" -eq 1 ]]; then
+    if [[ -n "$LOCATE_NAME" ]]; then
+        M="$DIR/dedup_${LOCATE_NAME}_master.txt"
+        F="$DIR/dedup_${LOCATE_NAME}_filtered.txt"
+        if [[ ! -f "$M" ]]; then
+            echo "No master found for '$LOCATE_NAME' in $DIR" >&2
+            exit 1
+        fi
+        echo "$M"
+        [[ -f "$F" ]] && echo "filtered: $F" >&2
+        exit 0
+    fi
+
+    if [[ ! -d "$DIR" ]]; then
+        echo "Directory not found: $DIR" >&2
+        exit 1
+    fi
+    shopt -s nullglob
+    masters=( "$DIR"/dedup_*_master.txt )
+    shopt -u nullglob
+    if [[ ${#masters[@]} -eq 0 ]]; then
+        echo "No namespaces found in $DIR" >&2
+        exit 1
+    fi
+    printf "%-24s  %10s  %s\n" "NAMESPACE" "LINES" "PATH"
+    for m in "${masters[@]}"; do
+        base="$(basename "$m")"
+        name="${base#dedup_}"
+        name="${name%_master.txt}"
+        lines=$(wc -l < "$m")
+        printf "%-24s  %10d  %s\n" "$name" "$lines" "$m"
+    done
+    exit 0
+fi
 
 if [[ -z "$INPUT" ]]; then
     echo "Error: no input wordlist given" >&2
